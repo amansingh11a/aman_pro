@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login — Portfolio Dashboard</title>
+<link rel="icon" type="image/png" href="aks.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #0b1120; min-height: 100vh; display: flex;
+  align-items: center; justify-content: center;
+  background-image: radial-gradient(ellipse at 30% 20%, rgba(13,148,136,0.08) 0%, transparent 60%),
+                    radial-gradient(ellipse at 70% 80%, rgba(217,119,6,0.06) 0%, transparent 60%);
+}
+.login-card {
+  background: #131c31; border: 1px solid #1e293b;
+  border-radius: 20px; padding: 3rem 2.5rem;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+.login-card h1 {
+  font-size: 1.5rem; font-weight: 700; color: #f1f5f9;
+  text-align: center; margin-bottom: 0.3rem;
+}
+.login-card p {
+  text-align: center; color: #64748b; font-size: 0.85rem;
+  margin-bottom: 2rem;
+}
+.logo {
+  display: block; margin: 0 auto 1.5rem;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #0d9488, #d97706);
+  padding: 2px;
+}
+.logo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.form-group { margin-bottom: 1.2rem; }
+.form-group label {
+  display: block; font-size: 0.75rem; font-weight: 600;
+  color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+.form-group input {
+  width: 100%; padding: 0.85rem 1rem;
+  background: #0b1120; border: 1px solid #1e293b;
+  border-radius: 10px; color: #f1f5f9;
+  font-size: 0.95rem; font-family: inherit;
+  transition: border-color 0.25s;
+}
+.form-group input:focus { outline: none; border-color: #0d9488; }
+.btn-login {
+  width: 100%; padding: 0.85rem;
+  background: linear-gradient(135deg, #0d9488, #0f766e);
+  border: none; border-radius: 10px; color: #fff;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(13,148,136,0.3);
+}
+.error { color: #ef4444; font-size: 0.8rem; text-align: center; margin-top: 0.8rem; display: none; }
+.loading { color: var(--text-sec); font-size: 0.8rem; text-align: center; margin-top: 0.8rem; display: none; }
+.server-off {
+  color: #f59e0b; font-size: 0.75rem; text-align: center; margin-top: 1rem;
+  display: none; line-height: 1.5;
+}
+.server-off a { color: #0d9488; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo"><img src="aks.png" alt="AKS"></div>
+  <h1>Dashboard Login</h1>
+  <p>Enter credentials to manage portfolio</p>
+  <form id="loginForm">
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="Enter your email" required>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password" required>
+    </div>
+    <button type="submit" class="btn-login" id="loginBtn">Sign In</button>
+    <div class="error" id="errorMsg">Invalid email or password</div>
+    <div class="loading" id="loadingMsg">⏳ Connecting to server...</div>
+  </form>
+  <div style="text-align:center; margin-top:1.2rem;">
+    <a href="/" style="color:#64748b; font-size:0.8rem; text-decoration:none; transition:color 0.25s;"
+       onmouseover="this.style.color='#0d9488'" onmouseout="this.style.color='#64748b'">← Back to Portfolio</a>
+  </div>
+</div>
+<script>
+var API = location.protocol === 'file:' ? 'http://localhost:5000/api' : '/api';
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('loadingMsg').style.display = 'block';
+  document.getElementById('loginBtn').disabled = true;
+
+  var email = document.getElementById('email').value.trim().toLowerCase();
+  var password = document.getElementById('password').value;
+
+  fetch(API + '/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: password })
+  })
+  .then(function(r) {
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('loginBtn').disabled = false;
+    if (!r.ok) { document.getElementById('errorMsg').style.display = 'block'; return null; }
+    return r.json();
+  })
+  .then(function(data) {
+    if (data && data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('auth', 'true');
+      window.location.href = 'dashboard.html';
+    }
+  })
+  .catch(function() {
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('errorMsg').style.display = 'block';
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — Portfolio Manager</title>
+<link rel="icon" type="image/png" href="aks.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet"/>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0b1120; --bg-card: #131c31; --bg-alt: #0f172a;
+  --text: #f1f5f9; --text-sec: #94a3b8; --text-muted: #64748b;
+  --accent: #0d9488; --accent-hover: #0f766e;
+  --gold: #d97706; --border: #1e293b;
+  --radius: 12px; --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+body {
+  font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text);
+  display: flex; min-height: 100vh;
+}
+.sidebar {
+  width: 240px; flex-shrink: 0; background: var(--bg-alt);
+  border-right: 1px solid var(--border); padding: 1.5rem 0;
+  height: 100vh; position: sticky; top: 0; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.sidebar-logo { text-align: center; padding: 0 1rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+.sidebar-logo img { height: 44px; width: auto; }
+.sidebar-logo small { display: block; color: var(--text-muted); font-size: 0.7rem; margin-top: 0.3rem; }
+.sidebar-nav { flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.75rem 1.5rem; cursor: pointer;
+  color: var(--text-sec); font-size: 0.85rem; font-weight: 500;
+  transition: all 0.2s; border-left: 3px solid transparent;
+}
+.nav-item:hover { background: rgba(13,148,136,0.05); color: var(--text); }
+.nav-item.active { background: rgba(13,148,136,0.1); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 1.1rem; width: 24px; text-align: center; }
+.sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
+.preview-btn, .logout-btn {
+  display: block; width: 100%; padding: 0.65rem; text-align: center;
+  border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.25s; text-decoration: none; border: none; margin-bottom: 0.5rem;
+}
+.preview-btn { background: var(--accent); color: #fff; }
+.preview-btn:hover { background: var(--accent-hover); }
+.logout-btn { background: transparent; color: #ef4444; border: 1px solid #ef4444; }
+.logout-btn:hover { background: #ef4444; color: #fff; }
+
+.main { flex: 1; padding: 2rem 2.5rem; overflow-y: auto; max-width: calc(100vw - 240px); }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.page-header h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; }
+.page-header .sub { color: var(--text-sec); font-size: 0.85rem; }
+.save-all-btn {
+  padding: 0.7rem 2rem; background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border: none; border-radius: 8px; color: #fff; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all 0.25s;
+}
+.save-all-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(13,148,136,0.3); }
+.section-panel { display: none; }
+.section-panel.active { display: block; }
+.section-panel h2 { font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+.section-panel h2 small { font-size: 0.7rem; color: var(--text-muted); font-weight: 400; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+.card h3 { font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.72rem; color: var(--text-sec); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%; padding: 0.7rem 0.9rem; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 0.88rem; font-family: inherit;
+  transition: border-color 0.25s;
+}
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); }
+.form-group textarea { resize: vertical; min-height: 80px; }
+.dynamic-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.dynamic-item {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem; position: relative;
+}
+.dynamic-item .remove-btn {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  width: 26px; height: 26px; border-radius: 50%; border: none;
+  background: rgba(239,68,68,0.15); color: #ef4444; cursor: pointer;
+  font-size: 0.8rem; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.dynamic-item .remove-btn:hover { background: #ef4444; color: #fff; }
+.add-btn {
+  padding: 0.6rem 1.2rem; background: transparent; border: 2px dashed var(--border);
+  border-radius: 8px; color: var(--text-sec); font-size: 0.82rem; cursor: pointer;
+  transition: all 0.25s; font-family: inherit; font-weight: 500; margin-top: 0.5rem;
+}
+.add-btn:hover { border-color: var(--accent); color: var(--accent); }
+.toast {
+  position: fixed; top: 1.5rem; right: 1.5rem; background: #065f46;
+  color: #fff; padding: 0.8rem 1.5rem; border-radius: 10px;
+  font-size: 0.85rem; font-weight: 500; z-index: 999;
+  transform: translateX(120%); transition: transform 0.4s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.toast.show { transform: translateX(0); }
+.toast.error { background: #991b1b; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <img src="aks.png" alt="AKS">
+    <small>Portfolio Dashboard</small>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" data-section="hero"><span class="icon">🏠</span> Hero</div>
+    <div class="nav-item" data-section="about"><span class="icon">👤</span> About</div>
+    <div class="nav-item" data-section="skills"><span class="icon">⚡</span> Skills</div>
+    <div class="nav-item" data-section="experience"><span class="icon">💼</span> Experience</div>
+    <div class="nav-item" data-section="education"><span class="icon">🎓</span> Education</div>
+    <div class="nav-item" data-section="projects"><span class="icon">📁</span> Projects</div>
+    <div class="nav-item" data-section="awards"><span class="icon">🏆</span> Awards</div>
+    <div class="nav-item" data-section="contact"><span class="icon">📬</span> Contact</div>
+  </div>
+  <div class="sidebar-footer">
+    <a class="preview-btn" href="aman_f.html" target="_blank">👁 Preview</a>
+    <button class="logout-btn" id="logoutBtn">✕ Logout</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-header">
+    <div>
+      <h1>Manage Portfolio</h1>
+      <div class="sub" id="connectionStatus">🔄 Loading from backend...</div>
+    </div>
+    <button class="save-all-btn" id="saveAllBtn">💾 Save All Changes</button>
+  </div>
+
+  <div id="panel-hero" class="section-panel active">
+    <h2>🏠 Hero Section</h2>
+    <div class="card">
+      <h3>Hero Content</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Tag Line</label><input id="heroTag"></div>
+        <div class="form-group"><label>Name (First)</label><input id="heroName1"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Name (Last)</label><input id="heroName2"></div>
+        <div class="form-group"><label>Gold Label</label><input id="heroGoldLabel"></div>
+      </div>
+      <div class="form-group"><label>Subtitle</label><textarea id="heroSubtitle" rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Button 1 Text</label><input id="heroBtn1"></div>
+        <div class="form-group"><label>Button 1 Link</label><input id="heroBtn1Link"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Button 2 Text</label><input id="heroBtn2"></div>
+        <div class="form-group"><label>Button 2 Link</label><input id="heroBtn2Link"></div>
+      </div>
+      <div class="form-group"><label>Hero Image (URL)</label><input id="heroImg"></div>
+    </div>
+  </div>
+
+  <div id="panel-about" class="section-panel">
+    <h2>👤 About Section</h2>
+    <div class="card">
+      <h3>About Text</h3>
+      <div class="form-group"><label>Paragraph 1</label><textarea id="aboutP1" rows="2"></textarea></div>
+      <div class="form-group"><label>Paragraph 2</label><textarea id="aboutP2" rows="2"></textarea></div>
+    </div>
+    <div class="card"><h3>Statistics</h3><div class="dynamic-list" id="statsList"></div><button class="add-btn" onclick="addItem('stats')">+ Add Stat</button></div>
+    <div class="card"><h3>Personal Info</h3><div class="dynamic-list" id="infoList"></div><button class="add-btn" onclick="addItem('info')">+ Add Info</button></div>
+  </div>
+
+  <div id="panel-skills" class="section-panel">
+    <h2>⚡ Skills</h2>
+    <div class="dynamic-list" id="skillsList"></div>
+    <button class="add-btn" onclick="addSkill()">+ Add Skill Category</button>
+  </div>
+
+  <div id="panel-experience" class="section-panel">
+    <h2>💼 Experience</h2>
+    <div class="dynamic-list" id="expList"></div>
+    <button class="add-btn" onclick="addExp()">+ Add Experience</button>
+  </div>
+
+  <div id="panel-education" class="section-panel">
+    <h2>🎓 Education</h2>
+    <div class="dynamic-list" id="eduList"></div>
+    <button class="add-btn" onclick="addEdu()">+ Add Education</button>
+  </div>
+
+  <div id="panel-projects" class="section-panel">
+    <h2>📁 Projects</h2>
+    <div class="dynamic-list" id="projList"></div>
+    <button class="add-btn" onclick="addProj()">+ Add Project</button>
+  </div>
+
+  <div id="panel-awards" class="section-panel">
+    <h2>🏆 Awards</h2>
+    <div class="dynamic-list" id="awardsList"></div>
+    <button class="add-btn" onclick="addItem('awards')">+ Add Award</button>
+  </div>
+
+  <div id="panel-contact" class="section-panel">
+    <h2>📬 Contact Section</h2>
+    <div class="card">
+      <h3>Contact Details</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Email</label><input id="contactEmail"></div>
+        <div class="form-group"><label>Phone</label><input id="contactPhone"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>WhatsApp Link</label><input id="contactWhatsappLink"></div>
+        <div class="form-group"><label>LinkedIn URL</label><input id="contactLinkedin"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>LinkedIn Text</label><input id="contactLinkedinText"></div>
+        <div class="form-group"><label>Location</label><input id="contactLocation"></div>
+      </div>
+      <div class="form-group"><label>Message Text</label><textarea id="contactMsg" rows="3"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var API = location.protocol === 'file:' ? 'http://localhost:5000/api' : '/api';
+
+function getToken() { return localStorage.getItem('token'); }
+
+function authHeaders() {
+  var t = getToken();
+  return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+
+function showToast(msg, isError) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (isError ? ' error' : '');
+  setTimeout(function() { t.classList.add('show'); }, 50);
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// Auth check
+if (!getToken()) { window.location.href = 'login.html'; }
+
+
+// Sidebar nav
+document.querySelectorAll('.nav-item[data-section]').forEach(function(item) {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    document.querySelectorAll('.section-panel').forEach(function(p) { p.classList.remove('active'); });
+    this.classList.add('active');
+    document.getElementById('panel-' + this.dataset.section).classList.add('active');
+  });
+});
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', function() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('auth');
+  window.location.href = 'index.html';
+});
+
+// ─── Data state ───
+var data = {};
+
+// ─── Fetch all data from API ───
+function loadData() {
+  var status = document.getElementById('connectionStatus');
+
+  fetch(API + '/export', { headers: { 'Authorization': 'Bearer ' + getToken() } })
+  .then(function(r) {
+    if (r.status === 401) { window.location.href = 'login.html'; return null; }
+    return r.json();
+  })
+  .then(function(d) {
+    if (!d) return;
+    data = d;
+    status.textContent = '✅ Connected to backend — Data loaded from MySQL';
+    status.style.color = '#2dd4bf';
+
+    // Fill form fields
+    if (d.hero) {
+      setVal('heroTag', d.hero.tag);
+      setVal('heroName1', d.hero.name_first);
+      setVal('heroName2', d.hero.name_last);
+      setVal('heroGoldLabel', d.hero.gold_label);
+      setVal('heroSubtitle', d.hero.subtitle);
+      setVal('heroBtn1', d.hero.btn1_text);
+      setVal('heroBtn1Link', d.hero.btn1_link);
+      setVal('heroBtn2', d.hero.btn2_text);
+      setVal('heroBtn2Link', d.hero.btn2_link);
+      setVal('heroImg', d.hero.hero_img);
+    }
+    setVal('aboutP1', d.paragraphs && d.paragraphs[0]);
+    setVal('aboutP2', d.paragraphs && d.paragraphs[1]);
+
+    // Dynamic data
+    data._stats = d.stats || [];
+    data._info = d.info || [];
+    data._skills = d.skills || [];
+    data._experience = d.experience || [];
+    data._education = d.education || [];
+    data._projects = d.projects || [];
+    data._awards = d.awards || [];
+
+    renderAll();
+
+    if (d.contact) {
+      setVal('contactEmail', d.contact.email);
+      setVal('contactPhone', d.contact.phone);
+      setVal('contactWhatsappLink', d.contact.whatsapp_link);
+      setVal('contactLinkedin', d.contact.linkedin_url);
+      setVal('contactLinkedinText', d.contact.linkedin_text);
+      setVal('contactLocation', d.contact.location);
+      setVal('contactMsg', d.contact.message_text);
+    }
+  })
+  .catch(function() {
+    status.textContent = '⚠ Backend server not running. Start with: python app.py';
+    status.style.color = '#f59e0b';
+    // Fallback to empty defaults
+    data._stats = []; data._info = []; data._skills = []; data._experience = [];
+    data._education = []; data._projects = []; data._awards = [];
+    renderAll();
+  });
+}
+
+function setVal(id, val) {
+  var el = document.getElementById(id);
+  if (el && val != null) el.value = val;
+}
+
+function renderAll() {
+  renderDynamic('statsList', 'stats', ['number', 'label']);
+  renderDynamic('infoList', 'info', ['label', 'value']);
+  renderSkills();
+  renderExp();
+  renderEdu();
+  renderProj();
+  renderDynamic('awardsList', 'awards', ['title', 'description']);
+}
+
+// ─── Dynamic list renderer ───
+function renderDynamic(listId, key, fields) {
+  var c = document.getElementById(listId); c.innerHTML = '';
+  (data['_' + key] || []).forEach(function(item, i) {
+    var rowsHtml = '';
+    var fLen = fields.length;
+    if (fLen === 2) rowsHtml = '<div class="form-row">' + fieldHtml(fields[0], item[fields[0]], key, i) + fieldHtml(fields[1], item[fields[1]], key, i) + '</div>';
+    else if (fLen === 1) rowsHtml = fieldHtml(fields[0], item[fields[0]], key, i);
+    else rowsHtml = '<div class="form-row three">' + fields.map(function(f) { return fieldHtml(f, item[f], key, i); }).join('') + '</div>';
+    c.innerHTML += '<div class="dynamic-item"><button class="remove-btn" onclick="removeItem(\'' + key + '\',' + i + ')">✕</button>' + rowsHtml + '</div>';
+  });
+}
+
+function fieldHtml(fieldName, val, key, idx) {
+  var label = fieldName.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+  return '<div class="form-group"><label>' + label + '</label><input class="auto-field" data-parent="' + key + '" data-idx="' + idx + '" data-field="' + fieldName + '" value="' + (val || '') + '"></div>';
+}
+
+// ─── Add / Remove ───
+function addItem(key) {
+  var defaults = { stats: {number:'0',label:'New'}, info: {label:'New',value:''}, awards: {title:'New',description:''} };
+  data['_' + key].push(defaults[key] || {});
+  renderDynamic(key + 'List', key, Object.keys(defaults[key] || {number:'',label:'',title:'',description:'',year:'',institution:'',degree:'',score:''}));
+  showToast('Added');
+}
+
+function removeItem(key, idx) {
+  data['_' + key].splice(idx, 1);
+  renderDynamic(key + 'List', key, key === 'stats' ? ['number','label'] : key === 'info' ? ['label','value'] : ['title','description']);
+  showToast('Removed');
+}
+
+// Skills
+function addSkill() { data._skills.push({category:'New',tags:['tag']}); renderSkills(); showToast('Added'); }
+
+function renderSkills() {
+  var c = document.getElementById('skillsList'); c.innerHTML = '';
+  data._skills.forEach(function(s, i) {
+    var tagsHtml = s.tags.map(function(t, ti) {
+      return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.2rem 0.6rem;font-size:0.8rem;margin:0.2rem">' +
+        '<input class="skill-tag-input" data-idx="' + i + '" data-tidx="' + ti + '" value="' + t + '" style="background:none;border:none;color:var(--text);width:auto;max-width:100px;padding:0;font-size:0.8rem">' +
+        '<span onclick="removeSkillTag(' + i + ',' + ti + ')" style="cursor:pointer;color:#ef4444;font-size:0.7rem">✕</span></span>';
+    }).join('') + '<span onclick="addSkillTag(' + i + ')" style="cursor:pointer;color:var(--accent);font-size:0.75rem;padding:0.2rem 0.5rem">+tag</span>';
+    c.innerHTML += '<div class="dynamic-item"><button class="remove-btn" onclick="removeSkill(' + i + ')">✕</button>' +
+      '<div class="form-group" style="margin-bottom:0.5rem"><label>Category</label><input class="skill-cat-input" data-idx="' + i + '" value="' + s.category + '"></div>' +
+      '<div><label style="font-size:0.72rem;color:var(--text-sec);font-weight:600;text-transform:uppercase">Tags</label><div style="margin-top:0.3rem">' + tagsHtml + '</div></div></div>';
+  });
+}
+function addSkillTag(idx) { data._skills[idx].tags.push('new'); renderSkills(); }
+function removeSkillTag(idx, tidx) { data._skills[idx].tags.splice(tidx, 1); renderSkills(); }
+function removeSkill(idx) { data._skills.splice(idx, 1); renderSkills(); }
+
+// Experience
+function addExp() { data._experience.push({period:'',role:'',organization:'',bullets:['']}); renderExp(); showToast('Added'); }
+
+function renderExp() {
+  var c = document.getElementById('expList'); c.innerHTML = '';
+  data._experience.forEach(function(e, i) {
+    var bHtml = e.bullets.map(function(b, bi) {
+      return '<div style="display:flex;gap:0.3rem;align-items:center;margin:0.2rem 0"><input class="exp-bullet-input" data-idx="' + i + '" data-bidx="' + bi + '" value="' + b + '" style="flex:1;padding:0.3rem 0.5rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.82rem"><span onclick="removeExpBullet(' + i + ',' + bi + ')" style="cursor:pointer;color:#ef4444;font-size:0.8rem">✕</span></div>';
+    }).join('') + '<span onclick="addExpBullet(' + i + ')" style="cursor:pointer;color:var(--accent);font-size:0.75rem">+ bullet</span>';
+    c.innerHTML += '<div class="dynamic-item"><button class="remove-btn" onclick="removeExpItem(' + i + ')">✕</button>' +
+      '<div class="form-row three">' +
+      '<div class="form-group"><label>Period</label><input class="exp-field" data-idx="' + i + '" data-field="period" value="' + (e.period||'') + '"></div>' +
+      '<div class="form-group"><label>Role</label><input class="exp-field" data-idx="' + i + '" data-field="role" value="' + (e.role||'') + '"></div>' +
+      '<div class="form-group"><label>Organization</label><input class="exp-field" data-idx="' + i + '" data-field="organization" value="' + (e.organization||'') + '"></div></div>' +
+      '<div><label style="font-size:0.72rem;color:var(--text-sec);font-weight:600;text-transform:uppercase">Bullets</label><div style="margin-top:0.3rem">' + bHtml + '</div></div></div>';
+  });
+}
+function addExpBullet(idx) { data._experience[idx].bullets.push(''); renderExp(); }
+function removeExpBullet(idx, bidx) { data._experience[idx].bullets.splice(bidx, 1); renderExp(); }
+function removeExpItem(idx) { data._experience.splice(idx, 1); renderExp(); }
+
+// Education
+function addEdu() { data._education.push({year:'',institution:'',degree:'',score:''}); renderEdu(); showToast('Added'); }
+
+function renderEdu() {
+  var c = document.getElementById('eduList'); c.innerHTML = '';
+  data._education.forEach(function(e, i) {
+    c.innerHTML += '<div class="dynamic-item"><button class="remove-btn" onclick="removeEduItem(' + i + ')">✕</button>' +
+      '<div class="form-row three">' +
+      '<div class="form-group"><label>Year</label><input class="edu-field" data-idx="' + i + '" data-field="year" value="' + (e.year||'') + '"></div>' +
+      '<div class="form-group"><label>Institution</label><input class="edu-field" data-idx="' + i + '" data-field="institution" value="' + (e.institution||'') + '"></div>' +
+      '<div class="form-group"><label>Score</label><input class="edu-field" data-idx="' + i + '" data-field="score" value="' + (e.score||'') + '"></div></div>' +
+      '<div class="form-group"><label>Degree</label><input class="edu-field" data-idx="' + i + '" data-field="degree" value="' + (e.degree||'') + '"></div></div>';
+  });
+}
+function removeEduItem(idx) { data._education.splice(idx, 1); renderEdu(); }
+
+// Projects
+function addProj() { data._projects.push({num:'0'+(data._projects.length+1),title:'',features:['']}); renderProj(); showToast('Added'); }
+
+function renderProj() {
+  var c = document.getElementById('projList'); c.innerHTML = '';
+  data._projects.forEach(function(p, i) {
+    var fHtml = p.features.map(function(f, fi) {
+      return '<div style="display:flex;gap:0.3rem;align-items:center;margin:0.2rem 0"><input class="proj-feat-input" data-idx="' + i + '" data-fidx="' + fi + '" value="' + f + '" style="flex:1;padding:0.3rem 0.5rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.82rem"><span onclick="removeProjFeat(' + i + ',' + fi + ')" style="cursor:pointer;color:#ef4444;font-size:0.8rem">✕</span></div>';
+    }).join('') + '<span onclick="addProjFeat(' + i + ')" style="cursor:pointer;color:var(--accent);font-size:0.75rem">+ feature</span>';
+    c.innerHTML += '<div class="dynamic-item"><button class="remove-btn" onclick="removeProjItem(' + i + ')">✕</button>' +
+      '<div class="form-row">' +
+      '<div class="form-group"><label>Number</label><input class="proj-field" data-idx="' + i + '" data-field="num" value="' + (p.num||'') + '"></div>' +
+      '<div class="form-group"><label>Title</label><input class="proj-field" data-idx="' + i + '" data-field="title" value="' + (p.title||'') + '"></div></div>' +
+      '<div><label style="font-size:0.72rem;color:var(--text-sec);font-weight:600;text-transform:uppercase">Features</label><div style="margin-top:0.3rem">' + fHtml + '</div></div></div>';
+  });
+}
+function addProjFeat(idx) { data._projects[idx].features.push(''); renderProj(); }
+function removeProjFeat(idx, fidx) { data._projects[idx].features.splice(fidx, 1); renderProj(); }
+function removeProjItem(idx) { data._projects.splice(idx, 1); renderProj(); }
+
+// ─── Sync input fields to data ───
+function syncInputs() {
+  // Dynamic fields via event listeners
+  // Static fields
+  data.hero = {
+    tag: g('heroTag'), name_first: g('heroName1'), name_last: g('heroName2'),
+    gold_label: g('heroGoldLabel'), subtitle: g('heroSubtitle'),
+    btn1_text: g('heroBtn1'), btn1_link: g('heroBtn1Link'),
+    btn2_text: g('heroBtn2'), btn2_link: g('heroBtn2Link'),
+    hero_img: g('heroImg')
+  };
+  data.paragraphs = [g('aboutP1'), g('aboutP2')].filter(Boolean);
+  data.contact = {
+    email: g('contactEmail'), phone: g('contactPhone'),
+    whatsapp_link: g('contactWhatsappLink'), linkedin_url: g('contactLinkedin'),
+    linkedin_text: g('contactLinkedinText'), location: g('contactLocation'),
+    message_text: g('contactMsg')
+  };
+}
+
+function g(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+
+// ─── Save All ───
+document.getElementById('saveAllBtn').addEventListener('click', function() {
+  syncInputs();
+  var btn = this; btn.disabled = true; btn.textContent = '⏳ Saving...';
+  var saves = [];
+
+  saves.push(
+    fetch(API + '/hero', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data.hero) }),
+    fetch(API + '/about/paragraphs', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ paragraphs: data.paragraphs }) }),
+    fetch(API + '/about/stats', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ stats: data._stats }) }),
+    fetch(API + '/about/info', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ info: data._info }) }),
+    fetch(API + '/skills', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data._skills.map(function(s) { return { category: s.category, tags: s.tags }; })) }),
+    fetch(API + '/experience', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data._experience.map(function(e) { return { period: e.period, role: e.role, organization: e.organization, bullets: e.bullets }; })) }),
+    fetch(API + '/education', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data._education) }),
+    fetch(API + '/projects', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data._projects) }),
+    fetch(API + '/awards', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data._awards) }),
+    fetch(API + '/contact', { method: 'PUT', headers: authHeaders(), body: JSON.stringify(data.contact) })
+  );
+
+  Promise.all(saves)
+    .then(function(responses) {
+      var ok = responses.every(function(r) { return r.ok; });
+      if (ok) showToast('✅ All changes saved to MySQL!');
+      else showToast('❌ Some saves failed', true);
+    })
+    .catch(function() { showToast('❌ Server error', true); })
+    .finally(function() { btn.disabled = false; btn.textContent = '💾 Save All Changes'; });
+});
+
+// ─── Auto-field listeners ───
+document.addEventListener('input', function(e) {
+  var el = e.target;
+  if (el.classList.contains('auto-field')) {
+    var parent = el.dataset.parent;
+    var idx = parseInt(el.dataset.idx);
+    var field = el.dataset.field;
+    if (data['_' + parent]) {
+      if (!data['_' + parent][idx]) data['_' + parent][idx] = {};
+      data['_' + parent][idx][field] = el.value;
+    }
+  }
+  if (el.classList.contains('skill-cat-input')) {
+    var idx = parseInt(el.dataset.idx);
+    if (data._skills[idx]) data._skills[idx].category = el.value;
+  }
+  if (el.classList.contains('skill-tag-input')) {
+    var idx = parseInt(el.dataset.idx);
+    var tidx = parseInt(el.dataset.tidx);
+    if (data._skills[idx] && data._skills[idx].tags) data._skills[idx].tags[tidx] = el.value;
+  }
+  if (el.classList.contains('exp-field')) {
+    data._experience[parseInt(el.dataset.idx)][el.dataset.field] = el.value;
+  }
+  if (el.classList.contains('exp-bullet-input')) {
+    data._experience[parseInt(el.dataset.idx)].bullets[parseInt(el.dataset.bidx)] = el.value;
+  }
+  if (el.classList.contains('edu-field')) {
+    data._education[parseInt(el.dataset.idx)][el.dataset.field] = el.value;
+  }
+  if (el.classList.contains('proj-field')) {
+    data._projects[parseInt(el.dataset.idx)][el.dataset.field] = el.value;
+  }
+  if (el.classList.contains('proj-feat-input')) {
+    data._projects[parseInt(el.dataset.idx)].features[parseInt(el.dataset.fidx)] = el.value;
+  }
+});
+
+// ─── Init ───
+loadData();
+</script>
+</body>
+</html>
