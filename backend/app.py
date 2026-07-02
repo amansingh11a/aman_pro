@@ -5,7 +5,7 @@ import datetime
 from functools import wraps
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from config import SECRET_KEY, JWT_EXPIRY_HOURS
+from backend.config import SECRET_KEY, JWT_EXPIRY_HOURS
 from db import get_conn, to_dict, to_dicts, _fix_sql, DB_TYPE
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'), static_url_path='')
